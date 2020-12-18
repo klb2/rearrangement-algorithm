@@ -71,8 +71,8 @@ def rearrange(quant, prob, tol, tol_type, lookback, max_ra, method, sample,
     #TODO: verbose
 
     #x_lst = _col_split(x_mat)
-    x_lst = x_mat
-    row_sums = np.sum(x_lst, axis=1)
+    #x_lst = x_mat
+    y_lst = x_mat
 
     num_col_no_change = 0
     len_opt_row_sums = 64
@@ -81,16 +81,16 @@ def rearrange(quant, prob, tol, tol_type, lookback, max_ra, method, sample,
     col_num = 0
 
     while True:
-        iter_num = iter_num + 1
         col_num = 0 if col_num >= num_var else col_num+1
-        y_lst = np.copy(x_lst) # there should be a better solution
-        y_rs = np.copy(row_sums)
+        #y_lst = np.copy(x_lst) # there should be a better solution
+        #y_rs = np.copy(row_sums)
+        y_rs = np.sum(x_lst, axis=1)
 
         y_col_j = y_lst[:, col_num]
         _rs_mj = y_rs - y_col_j
         yj = x_lst[:, col_num][_indices_opp_ordered_to(_rs_mj)]
         y_lst[:, col_num] = yj
-        _rs_mj = _rs_mj + yj
+        y_rs = _rs_mj + yj
 
         #TODO: verbose
 
@@ -99,8 +99,14 @@ def rearrange(quant, prob, tol, tol_type, lookback, max_ra, method, sample,
         #    pass
         opt_row_sums.append(opt_rs_cur_col)
 
-        if iter_num > lookback:
-            pass
+        if iter_num >= lookback:
+            opt_rs_n_lookback_col_ago = opt_row_sums[iter_num - lookback]
+            _tol = tol_func(opt_rs_cur_col, opt_rs_n_lookback_col_ago)
+            if (iter_num == max_ra) or (_tol <= tol):
+                break
+        iter_num = iter_num + 1
+
+    return y_lst #TODO
 
 
 
