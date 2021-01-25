@@ -49,7 +49,7 @@ def rearrange(quant, prob, tol, tol_type, lookback, max_ra, method, sample,
     -------
     TODO
     """
-    x_mat = np.array([qf[prob] for qf in quant]).T
+    x_mat = np.array([qf(prob) for qf in quant]).T
     num_samples, num_var = np.shape(x_mat)
     if max_ra == 0:
         max_ra = np.Inf
@@ -81,14 +81,14 @@ def rearrange(quant, prob, tol, tol_type, lookback, max_ra, method, sample,
     col_num = 0
 
     while True:
-        col_num = 0 if col_num >= num_var else col_num+1
+        col_num = 0 if col_num >= num_var else col_num#+1
         #y_lst = np.copy(x_lst) # there should be a better solution
         #y_rs = np.copy(row_sums)
-        y_rs = np.sum(x_lst, axis=1)
+        y_rs = np.sum(y_lst, axis=1)
 
         y_col_j = y_lst[:, col_num]
         _rs_mj = y_rs - y_col_j
-        yj = x_lst[:, col_num][_indices_opp_ordered_to(_rs_mj)]
+        yj = y_lst[:, col_num][_indices_opp_ordered_to(_rs_mj)]
         y_lst[:, col_num] = yj
         y_rs = _rs_mj + yj
 
@@ -105,6 +105,7 @@ def rearrange(quant, prob, tol, tol_type, lookback, max_ra, method, sample,
             if (iter_num == max_ra) or (_tol <= tol):
                 break
         iter_num = iter_num + 1
+        print(y_lst)
 
     return y_lst #TODO
 
@@ -184,3 +185,4 @@ def rearrange_algorithm(level: float, quant, num_steps: int=10, abstol: float=0,
     result_up = rearrange(quant, prob_over, tol=abstol, tol_type="absolute",
                           lookback=lookback, max_ra=max_ra, method=method,
                           sample=sample, is_sorted=True)
+    print(result_low)
