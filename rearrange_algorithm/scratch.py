@@ -74,9 +74,9 @@ def create_matrix_from_quantile(quant, prob, level=1.):
     return x_mat
 
 
-def rearrange_algorithm(level: float, quant, num_steps: int=10, abstol: float=0,
-                        lookback: int=0, max_ra: int=0, method: str="lower",
-                        sample: bool=True, supermod_func=np.sum):
+def bounds_var(level: float, quant, num_steps: int=10, abstol: float=0,
+               lookback: int=0, max_ra: int=0, method: str="lower", sample:
+               bool=True, supermod_func=np.sum):
     """Computing the lower/upper bounds for the best and worst VaR
 
     This function performs the RA and calculates the lower and upper bounds on
@@ -217,7 +217,7 @@ def bounds_probability(quant, s_level, num_steps: int=10, abstol: float=0,
         raise NotImplementedError
 
     def find_new_alpha(s, prob_alpha, alpha, alpha_low=0., alpha_high=1.):
-        x_mat_alpha = create_matrix_from_quantile(quant, prob_alpha)
+        x_mat_alpha = create_matrix_from_quantile(quant, prob_alpha, level=alpha)
         x_ra = basic_rearrange(x_mat_alpha, tol=abstol, tol_type="absolute",
                 lookback=lookback, max_ra=max_ra, optim_func=optim_func,
                 supermod_func=supermod_func)
@@ -236,7 +236,7 @@ def bounds_probability(quant, s_level, num_steps: int=10, abstol: float=0,
             prob_alpha = prob_func(alpha)
             alpha, alpha_low, alpha_high, x_ra = find_new_alpha(s_level,
                     prob_alpha, alpha, alpha_low, alpha_high)
-            print(alpha, alpha_low, alpha_high)
+            #print(alpha, alpha_low, alpha_high)
         return alpha, x_ra
 
     alpha = .5
@@ -244,4 +244,5 @@ def bounds_probability(quant, s_level, num_steps: int=10, abstol: float=0,
     alpha_high = 1.
     alpha_under, x_ra_under = alpha_loop(alpha, alpha_low, alpha_high, prob_under)
     alpha_over, x_ra_over = alpha_loop(alpha, alpha_low, alpha_high, prob_over)
-    return (1.-alpha_under, x_ra_under), (1.-alpha_over, x_ra_over)
+    return (alpha_under, x_ra_under), (alpha_over, x_ra_over)
+    #return (1.-alpha_under, x_ra_under), (1.-alpha_over, x_ra_over)
