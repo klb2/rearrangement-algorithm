@@ -2,20 +2,15 @@ import numpy as np
 from scipy import stats
 
 
-#def sum_func(x):
-#    """Sum function that can be used in the RA as a supermodular function"""
-#    return np.sum(x, axis=1)
-#
-#def max_func(x):
-#    """Max function that can be used in the RA as a supermodular function"""
-#    return np.max(x, axis=1)
-
-
 def basic_rearrange(x_mat, tol, tol_type, lookback, max_ra, optim_func,
                     supermod_func=np.sum, is_sorted=True, verbose=False,
                     *args, **kwargs):
     num_samples, num_var = np.shape(x_mat)
-    x_mat = np.vstack([np.random.permutation(_col) for _col in x_mat.T]).T  #random permutation
+    if is_sorted:
+        x_mat_sorted = np.copy(x_mat)
+    else:
+        x_mat_sorted = np.sort(x, axis=0)
+    #x_mat = np.vstack([np.random.permutation(_col) for _col in x_mat.T]).T  #random permutation
     row_sums = supermod_func(x_mat, axis=1)
 
     iteration = 0
@@ -37,14 +32,17 @@ def basic_rearrange(x_mat, tol, tol_type, lookback, max_ra, optim_func,
         _column = x_mat[:, col_idx]
         _x_wo_column = np.delete(x_mat, col_idx, axis=1) # https://stackoverflow.com/q/21022542
         rs_mj = supermod_func(_x_wo_column, axis=1)
-        _rank_idx = stats.rankdata(rs_mj, method='ordinal')-1
-        rearrange_col = np.sort(_column)[::-1][_rank_idx]
+        #_rank_idx = stats.rankdata(rs_mj, method='ordinal')-1
+        #rearrange_col = np.sort(_column)[::-1][_rank_idx]
+        _rank_idx = np.argsort(np.argsort(rs_mj)[::-1])
+        rearrange_col = x_mat_sorted[:, col_idx][_rank_idx]
         x_mat[:, col_idx] = rearrange_col
         row_sums = supermod_func(x_mat, axis=1)
 
         opt_rs_new = optim_func(row_sums)
         opt_rs_history.append(opt_rs_new)
 
+        #print("Iteration: {:d}".format(iteration))
         if iteration > lookback:
             opt_rs_lookback_ago = opt_rs_history[iteration-lookback-1]
             if tol_type == "absolute":
@@ -62,11 +60,6 @@ def basic_rearrange(x_mat, tol, tol_type, lookback, max_ra, optim_func,
         #x_old = np.copy(x_mat)
 
         col_idx = np.mod(col_idx + 1, num_var)
-#    bound = optim_func(row_sums)
-#    print(iteration)
-#    print(bound)
-#    print(opt_rs_history)
-    #print(x_mat)
     return x_mat
 
 
@@ -172,8 +165,6 @@ def bounds_expectation_supermod(quant, num_steps: int=10, abstol: float=0,
         lookback = len(quant)
     method = method.lower()
 
-    #if not 0 < level < 1:
-    #    raise ValueError("Level needs to be between zero and one!")
     if abstol < 0:
         raise ValueError("Absolute tolerance needs to be non-negative!")
     if num_steps < 2:
@@ -181,18 +172,70 @@ def bounds_expectation_supermod(quant, num_steps: int=10, abstol: float=0,
 
     prob_under = np.arange(num_steps)/num_steps
     prob_over = (np.arange(num_steps)+1)/num_steps
-    optim_func = min
 
     x_mat_under = create_matrix_from_quantile(quant, prob_under)
     x_mat_over = create_matrix_from_quantile(quant, prob_over)
     if method in ["lower"]:
+        optim_func = max
         x_ra_low = basic_rearrange(x_mat_under, tol=abstol, tol_type="absolute",
-                                lookback=lookback, max_ra=max_ra, optim_func=optim_func)
+                                   lookback=lookback, max_ra=max_ra,
+                                   optim_func=optim_func, supermod_func=supermod_func)
         x_ra_up = basic_rearrange(x_mat_over, tol=abstol, tol_type="absolute",
-                                lookback=lookback, max_ra=max_ra, optim_func=optim_func)
+                                  lookback=lookback, max_ra=max_ra,
+                                  optim_func=optim_func, supermod_func=supermod_func)
     elif method in ["upper"]:
         x_ra_low = np.sort(x_mat_under, axis=0)
         x_ra_up = np.sort(x_mat_over, axis=0)
     bound_low = np.mean(supermod_func(x_ra_low, axis=1))
     bound_up = np.mean(supermod_func(x_ra_up, axis=1))
     return (bound_low, x_ra_low), (bound_up, x_ra_up)
+
+
+
+
+def bounds_probability(quant, s_level, num_steps: int=10, abstol: float=0,
+                       lookback: int=0, max_ra: int=0, supermod_func=np.sum,
+                       method: str="lower", sample: bool=True):
+    if lookback == 0:
+        lookback = len(quant)
+    method = method.lower()
+
+    if abstol < 0:
+        raise ValueError("Absolute tolerance needs to be non-negative!")
+    if num_steps < 2:
+        raise ValueError("Number of discretization points needs to be at least 2")
+
+    if method in ['upper']:
+        prob_under = lambda alpha: alpha + (1-alpha)*np.arange(num_steps)/num_steps
+        prob_over = lambda alpha: alpha + (1-alpha)*np.arange(1, num_steps+1)/num_steps
+        optim_func = min
+    elif method in ['lower']:
+        prob_under = lambda alpha: alpha*np.arange(num_steps)/num_steps
+        prob_over = lambda alpha: alpha*np.arange(1, num_steps+1)/num_steps
+        optim_func = max
+    else:
+        raise NotImplementedError
+
+    def find_new_alpha(s, prob_alpha, alpha, alpha_low=0., alpha_high=1.):
+        x_mat_alpha = create_matrix_from_quantile(quant, prob_alpha)
+        x_ra = basic_rearrange(x_mat_alpha, tol=abstol, tol_type="absolute",
+                lookback=lookback, max_ra=max_ra, optim_func=optim_func,
+                supermod_func=supermod_func)
+        psi_x_ra = supermod_func(x_ra, axis=1)
+        _g = optim_func(psi_x_ra)
+        if _g >= s:
+            alpha_high = alpha
+            alpha = (alpha + alpha_low)/2.
+        else:
+            alpha_low = alpha
+            alpha = (alpha + alpha_high)/2.
+        return alpha, alpha_low, alpha_high
+
+
+    alpha = .5
+    while True:
+
+
+
+    if method in ["lower"]:
+        pass
