@@ -229,13 +229,19 @@ def bounds_probability(quant, s_level, num_steps: int=10, abstol: float=0,
         else:
             alpha_low = alpha
             alpha = (alpha + alpha_high)/2.
-        return alpha, alpha_low, alpha_high
+        return alpha, alpha_low, alpha_high, x_ra
 
+    def alpha_loop(alpha, alpha_low, alpha_high, prob_func):
+        while np.abs(alpha_high - alpha_low) > 1e-4:
+            prob_alpha = prob_func(alpha)
+            alpha, alpha_low, alpha_high, x_ra = find_new_alpha(s_level,
+                    prob_alpha, alpha, alpha_low, alpha_high)
+            print(alpha, alpha_low, alpha_high)
+        return alpha, x_ra
 
     alpha = .5
-    while True:
-
-
-
-    if method in ["lower"]:
-        pass
+    alpha_low = 0.
+    alpha_high = 1.
+    alpha_under, x_ra_under = alpha_loop(alpha, alpha_low, alpha_high, prob_under)
+    alpha_over, x_ra_over = alpha_loop(alpha, alpha_low, alpha_high, prob_over)
+    return (1.-alpha_under, x_ra_under), (1.-alpha_over, x_ra_over)
