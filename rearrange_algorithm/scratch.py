@@ -3,7 +3,7 @@ from scipy import stats
 
 
 def basic_rearrange(x_mat, tol, tol_type, lookback, max_ra, optim_func,
-                    supermod_func=np.sum, is_sorted=False, verbose=False,
+                    cost_func=np.sum, is_sorted=False, verbose=False,
                     *args, **kwargs):
     num_samples, num_var = np.shape(x_mat)
     if is_sorted:
@@ -11,7 +11,7 @@ def basic_rearrange(x_mat, tol, tol_type, lookback, max_ra, optim_func,
     else:
         x_mat_sorted = np.sort(x_mat, axis=0)
     #x_mat = np.vstack([np.random.permutation(_col) for _col in x_mat.T]).T  #random permutation
-    row_sums = supermod_func(x_mat, axis=1)
+    row_sums = cost_func(x_mat, axis=1)
 
     iteration = 0
     col_idx = 0
@@ -31,13 +31,13 @@ def basic_rearrange(x_mat, tol, tol_type, lookback, max_ra, optim_func,
         
         _column = x_mat[:, col_idx]
         _x_wo_column = np.delete(x_mat, col_idx, axis=1) # https://stackoverflow.com/q/21022542
-        rs_mj = supermod_func(_x_wo_column, axis=1)
+        rs_mj = cost_func(_x_wo_column, axis=1)
         #_rank_idx = stats.rankdata(rs_mj, method='ordinal')-1
         #rearrange_col = np.sort(_column)[::-1][_rank_idx]
         _rank_idx = np.argsort(np.argsort(rs_mj)[::-1])
         rearrange_col = x_mat_sorted[:, col_idx][_rank_idx]
         x_mat[:, col_idx] = rearrange_col
-        row_sums = supermod_func(x_mat, axis=1)
+        row_sums = cost_func(x_mat, axis=1)
 
         opt_rs_new = optim_func(row_sums)
         opt_rs_history.append(opt_rs_new)
@@ -76,7 +76,7 @@ def create_matrix_from_quantile(quant, prob, level=1.):
 
 def bounds_var(level: float, quant, num_steps: int=10, abstol: float=0,
                lookback: int=0, max_ra: int=0, method: str="lower", sample:
-               bool=True, supermod_func=np.sum):
+               bool=True, cost_func=np.sum):
     """Computing the lower/upper bounds for the best and worst VaR
 
     This function performs the RA and calculates the lower and upper bounds on
@@ -145,15 +145,15 @@ def bounds_var(level: float, quant, num_steps: int=10, abstol: float=0,
     x_mat_under = create_matrix_from_quantile(quant, prob_under, level)
     x_ra_low = basic_rearrange(x_mat_under, tol=abstol, tol_type="absolute",
             lookback=lookback, max_ra=max_ra, optim_func=optim_func,
-            supermod_func=supermod_func)
-    bound_low = optim_func(supermod_func(x_ra_low, axis=1))
+            cost_func=cost_func)
+    bound_low = optim_func(cost_func(x_ra_low, axis=1))
 
     # Determine overline{X}^*
     x_mat_over = create_matrix_from_quantile(quant, prob_over, level)
     x_ra_up = basic_rearrange(x_mat_over, tol=abstol, tol_type="absolute",
             lookback=lookback, max_ra=max_ra, optim_func=optim_func,
-            supermod_func=supermod_func)
-    bound_up = optim_func(supermod_func(x_ra_up, axis=1))
+            cost_func=cost_func)
+    bound_up = optim_func(cost_func(x_ra_up, axis=1))
     return (bound_low, x_ra_low), (bound_up, x_ra_up)
 
 
@@ -178,10 +178,10 @@ def bounds_expectation_supermod(quant, num_steps: int=10, abstol: float=0,
         optim_func = max
         x_ra_low = basic_rearrange(x_mat_under, tol=abstol, tol_type="absolute",
                                    lookback=lookback, max_ra=max_ra,
-                                   optim_func=optim_func, supermod_func=supermod_func)
+                                   optim_func=optim_func, cost_func=supermod_func)
         x_ra_up = basic_rearrange(x_mat_over, tol=abstol, tol_type="absolute",
                                   lookback=lookback, max_ra=max_ra,
-                                  optim_func=optim_func, supermod_func=supermod_func)
+                                  optim_func=optim_func, cost_func=supermod_func)
     elif method in ["upper"]:
         x_ra_low = np.sort(x_mat_under, axis=0)
         x_ra_up = np.sort(x_mat_over, axis=0)
@@ -194,7 +194,7 @@ def bounds_expectation_supermod(quant, num_steps: int=10, abstol: float=0,
 
 def bounds_surv_probability(quant, s_level, num_steps: int=10, abstol: float=0,
                             lookback: int=0, max_ra: int=0,
-                            supermod_func=np.sum, method: str="lower",
+                            cost_func=np.sum, method: str="lower",
                             sample: bool=True):
     if lookback == 0:
         lookback = len(quant)
@@ -220,8 +220,9 @@ def bounds_surv_probability(quant, s_level, num_steps: int=10, abstol: float=0,
         x_mat_alpha = create_matrix_from_quantile(quant, prob_alpha, level=alpha)
         x_ra = basic_rearrange(x_mat_alpha, tol=abstol, tol_type="absolute",
                 lookback=lookback, max_ra=max_ra, optim_func=optim_func,
-                supermod_func=supermod_func)
-        psi_x_ra = supermod_func(x_ra, axis=1)
+                cost_func=cost_func)
+        #x_ra = np.sort(x_mat_alpha, axis=0) # to test comonotonic
+        psi_x_ra = cost_func(x_ra, axis=1)
         _g = optim_func(psi_x_ra)
         if _g >= s:
             alpha_high = alpha

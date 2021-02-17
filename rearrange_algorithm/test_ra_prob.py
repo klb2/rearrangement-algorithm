@@ -15,9 +15,9 @@ func = np.max
 #supermod_func = np.min
 
 s = 2
-results_low_under, results_low_over = scratch.bounds_probability(qf, s,
-        num_steps=N, supermod_func=func, method="lower", max_ra=0)
-results_up_under, results_up_over = scratch.bounds_probability(qf, s,
-        num_steps=N, supermod_func=func, method="upper", max_ra=0)
+results_low_under, results_low_over = scratch.bounds_surv_probability(qf, s,
+        num_steps=N, cost_func=func, method="lower", max_ra=0)
+results_up_under, results_up_over = scratch.bounds_surv_probability(qf, s,
+        num_steps=N, cost_func=func, method="upper", max_ra=0)
 print(results_low_under[0], results_low_over[0])
 print(results_up_under[0], results_up_over[0])
