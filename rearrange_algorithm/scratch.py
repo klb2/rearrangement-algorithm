@@ -3,13 +3,13 @@ from scipy import stats
 
 
 def basic_rearrange(x_mat, tol, tol_type, lookback, max_ra, optim_func,
-                    supermod_func=np.sum, is_sorted=True, verbose=False,
+                    supermod_func=np.sum, is_sorted=False, verbose=False,
                     *args, **kwargs):
     num_samples, num_var = np.shape(x_mat)
     if is_sorted:
         x_mat_sorted = np.copy(x_mat)
     else:
-        x_mat_sorted = np.sort(x, axis=0)
+        x_mat_sorted = np.sort(x_mat, axis=0)
     #x_mat = np.vstack([np.random.permutation(_col) for _col in x_mat.T]).T  #random permutation
     row_sums = supermod_func(x_mat, axis=1)
 
@@ -141,7 +141,6 @@ def bounds_var(level: float, quant, num_steps: int=10, abstol: float=0,
     else:
         raise NotImplementedError("Only best and worst VaR are supported right now.")
 
-
     # Determine underline{X}^*
     x_mat_under = create_matrix_from_quantile(quant, prob_under, level)
     x_ra_low = basic_rearrange(x_mat_under, tol=abstol, tol_type="absolute",
@@ -173,8 +172,8 @@ def bounds_expectation_supermod(quant, num_steps: int=10, abstol: float=0,
     prob_under = np.arange(num_steps)/num_steps
     prob_over = (np.arange(num_steps)+1)/num_steps
 
-    x_mat_under = create_matrix_from_quantile(quant, prob_under)
-    x_mat_over = create_matrix_from_quantile(quant, prob_over)
+    x_mat_under = create_matrix_from_quantile(quant, prob_under, level=0.)
+    x_mat_over = create_matrix_from_quantile(quant, prob_over, level=0.)
     if method in ["lower"]:
         optim_func = max
         x_ra_low = basic_rearrange(x_mat_under, tol=abstol, tol_type="absolute",
@@ -193,9 +192,10 @@ def bounds_expectation_supermod(quant, num_steps: int=10, abstol: float=0,
 
 
 
-def bounds_probability(quant, s_level, num_steps: int=10, abstol: float=0,
-                       lookback: int=0, max_ra: int=0, supermod_func=np.sum,
-                       method: str="lower", sample: bool=True):
+def bounds_surv_probability(quant, s_level, num_steps: int=10, abstol: float=0,
+                            lookback: int=0, max_ra: int=0,
+                            supermod_func=np.sum, method: str="lower",
+                            sample: bool=True):
     if lookback == 0:
         lookback = len(quant)
     method = method.lower()
@@ -244,5 +244,22 @@ def bounds_probability(quant, s_level, num_steps: int=10, abstol: float=0,
     alpha_high = 1.
     alpha_under, x_ra_under = alpha_loop(alpha, alpha_low, alpha_high, prob_under)
     alpha_over, x_ra_over = alpha_loop(alpha, alpha_low, alpha_high, prob_over)
-    return (alpha_under, x_ra_under), (alpha_over, x_ra_over)
-    #return (1.-alpha_under, x_ra_under), (1.-alpha_over, x_ra_over)
+    #return (alpha_under, x_ra_under), (alpha_over, x_ra_over)
+    return (1.-alpha_under, x_ra_under), (1.-alpha_over, x_ra_over)
+
+
+
+def create_comonotonic_ra(level: float, quant, num_steps: int=10):
+    if num_steps < 2:
+        raise ValueError("Number of discretization points needs to be at least 2")
+
+    #prob_under = level*np.arange(num_steps)/num_steps
+    #prob_over = level*np.arange(1, num_steps+1)/num_steps
+    prob_under = level + (1-level)*np.arange(num_steps)/num_steps
+    prob_over = level + (1-level)*np.arange(1, num_steps+1)/num_steps
+
+    x_mat_under = create_matrix_from_quantile(quant, prob_under, level)
+    x_mat_over = create_matrix_from_quantile(quant, prob_over, level)
+    x_ra_low = np.sort(x_mat_under, axis=0)
+    x_ra_up = np.sort(x_mat_over, axis=0)
+    return x_ra_low, x_ra_up
