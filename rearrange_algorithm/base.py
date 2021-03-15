@@ -10,6 +10,7 @@ def basic_rearrange(x_mat, optim_func, lookback, tol=0., tol_type='absolute',
         x_mat_sorted = np.copy(x_mat)
     else:
         x_mat_sorted = np.sort(x_mat, axis=0)
+    x_mat = np.copy(x_mat)
     #x_mat = np.vstack([np.random.permutation(_col) for _col in x_mat.T]).T  #random permutation
     row_sums = cost_func(x_mat, axis=1)
 
@@ -29,15 +30,15 @@ def basic_rearrange(x_mat, optim_func, lookback, tol=0., tol_type='absolute',
         #row_sums = rs_mj + rearrange_col
         #####
         
-        _column = x_mat_sorted[:, col_idx]
-        _x_wo_column = np.delete(x_mat_sorted, col_idx, axis=1) # https://stackoverflow.com/q/21022542
+        _column = x_mat[:, col_idx]
+        _x_wo_column = np.delete(x_mat, col_idx, axis=1) # https://stackoverflow.com/q/21022542
         rs_mj = cost_func(_x_wo_column, axis=1)
         #_rank_idx = stats.rankdata(rs_mj, method='ordinal')-1
         #rearrange_col = np.sort(_column)[::-1][_rank_idx]
         _rank_idx = np.argsort(np.argsort(rs_mj)[::-1])
         rearrange_col = x_mat_sorted[:, col_idx][_rank_idx]
-        x_mat_sorted[:, col_idx] = rearrange_col
-        row_sums = cost_func(x_mat_sorted, axis=1)
+        x_mat[:, col_idx] = rearrange_col
+        row_sums = cost_func(x_mat, axis=1)
 
         opt_rs_new = optim_func(row_sums)
         opt_rs_history.append(opt_rs_new)
@@ -60,7 +61,7 @@ def basic_rearrange(x_mat, optim_func, lookback, tol=0., tol_type='absolute',
         #x_old = np.copy(x_mat)
 
         col_idx = np.mod(col_idx + 1, num_var)
-    return x_mat_sorted
+    return x_mat
 
 
 def create_matrix_from_quantile(quant, prob, level=1.):
