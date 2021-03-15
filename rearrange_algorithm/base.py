@@ -1,119 +1,82 @@
 import numpy as np
-
-def _indices_opp_ordered_to(x):
-    return np.argsort(np.argsort(x)[::-1])
-
-def rearrange(quant, prob, tol, tol_type, lookback, max_ra, method, sample,
-              is_sorted=True, verbose=False, *args, **kwargs):
-    """Function to do the rearrangement.
-
-    Parameters
-    ----------
-    quant : list
-        List of marginal quantile functions
-
-    prob : list
-        Array that contains the probabilities/level sets at which the quantile
-        functions are evaluated.
-
-    tol : float
-        Tolerance to determine the convergence
-
-    tol_type : str
-        Type of tolerance functions ("absolute" or "relative")
-
-    lookback : int
-        Number of column rearrangements to look back for deciding about
-        convergence. Must be a number in {1, ..., max_ra-1}.
-        If set to zero, it defaults to len(quant).
-
-    max_ra : int
-        Number of column rearrangements. If zero, it defaults to infinitely
-        many.
-
-    method : str
-        Risk measure that is approximated. Valid options are:
-        * `lower` or `best`: for best VaR
-        * `upper` or `worst`: for worst VaR
-
-    sample : bool
-        Indication whether each column of the two working matrices is randomly
-        permuted before the rearrangements begin
-
-    *args, **kwargs
-        Remaining arguments and keyword arguments are passed to the
-        optimization function.
+from scipy import stats
 
 
-    Returns
-    -------
-    TODO
-    """
+def basic_rearrange(x_mat, tol, tol_type, lookback, max_ra, optim_func,
+                    cost_func=np.sum, is_sorted=False, verbose=False,
+                    *args, **kwargs):
+    num_samples, num_var = np.shape(x_mat)
+    if is_sorted:
+        x_mat_sorted = np.copy(x_mat)
+    else:
+        x_mat_sorted = np.sort(x_mat, axis=0)
+    #x_mat = np.vstack([np.random.permutation(_col) for _col in x_mat.T]).T  #random permutation
+    row_sums = cost_func(x_mat, axis=1)
+
+    iteration = 0
+    col_idx = 0
+    opt_rs_history = []
+    while True:
+        iteration = iteration + 1
+
+        #### FOR SUM
+        ##for col_idx in range(num_var):
+        #_column = x_mat[:, col_idx]
+        #rs_mj = row_sums - _column
+        #_rank_idx = stats.rankdata(rs_mj, method='ordinal')-1
+        #rearrange_col = np.sort(_column)[::-1][_rank_idx]
+        #x_mat[:, col_idx] = rearrange_col
+        #row_sums = rs_mj + rearrange_col
+        #####
+        
+        _column = x_mat[:, col_idx]
+        _x_wo_column = np.delete(x_mat, col_idx, axis=1) # https://stackoverflow.com/q/21022542
+        rs_mj = cost_func(_x_wo_column, axis=1)
+        #_rank_idx = stats.rankdata(rs_mj, method='ordinal')-1
+        #rearrange_col = np.sort(_column)[::-1][_rank_idx]
+        _rank_idx = np.argsort(np.argsort(rs_mj)[::-1])
+        rearrange_col = x_mat_sorted[:, col_idx][_rank_idx]
+        x_mat[:, col_idx] = rearrange_col
+        row_sums = cost_func(x_mat, axis=1)
+
+        opt_rs_new = optim_func(row_sums)
+        opt_rs_history.append(opt_rs_new)
+
+        #print("Iteration: {:d}".format(iteration))
+        if iteration > lookback:
+            opt_rs_lookback_ago = opt_rs_history[iteration-lookback-1]
+            if tol_type == "absolute":
+                _tol = abs(opt_rs_new - opt_rs_lookback_ago)
+            elif tol_type == "relative":
+                _tol = abs((opt_rs_new - opt_rs_lookback_ago)/opt_rs_lookback_ago)
+
+            #tol_reached = np.allclose(x_mat, x_old) if tol == 0 else _tol <= tol
+            tol_reached = _tol <= tol
+
+            if tol_reached or iteration == max_ra:
+                break
+        #else:
+        #opt_rs_old = opt_rs_new
+        #x_old = np.copy(x_mat)
+
+        col_idx = np.mod(col_idx + 1, num_var)
+    return x_mat
+
+
+def create_matrix_from_quantile(quant, prob, level=1.):
     x_mat = np.array([qf(prob) for qf in quant]).T
     num_samples, num_var = np.shape(x_mat)
-    if max_ra == 0:
-        max_ra = np.Inf
-
-    if method in ['best', 'lower']:
-        # TODO: adjustment of levels that are -Inf (for 0 quantile)
-        opt_func = max
-    elif method in ['worst', 'upper']:
-        # TODO: adjustment of levels that are +Inf (for 1 quantile)
-        opt_func = min
-    else:
-        raise NotImplementedError("Only best and worst VaR are supported right now.")
-
-    if tol_type.startswith("abs"):
-        tol_func = lambda x, y: abs(x-y)
-    else:
-        tol_func = lambda x, y: abs((x-y)/y)
-
-    #TODO: verbose
-
-    #x_lst = _col_split(x_mat)
-    #x_lst = x_mat
-    y_lst = x_mat
-
-    num_col_no_change = 0
-    len_opt_row_sums = 64
-    opt_row_sums = []#np.zeros(len_opt_row_sums)
-    iter_num = 0
-    col_num = 0
-
-    while True:
-        col_num = 0 if col_num >= num_var else col_num#+1
-        #y_lst = np.copy(x_lst) # there should be a better solution
-        #y_rs = np.copy(row_sums)
-        y_rs = np.sum(y_lst, axis=1)
-
-        y_col_j = y_lst[:, col_num]
-        _rs_mj = y_rs - y_col_j
-        yj = y_lst[:, col_num][_indices_opp_ordered_to(_rs_mj)]
-        y_lst[:, col_num] = yj
-        y_rs = _rs_mj + yj
-
-        #TODO: verbose
-
-        opt_rs_cur_col = opt_func(y_rs)
-        #if iter_num > len_opt_row_sums:
-        #    pass
-        opt_row_sums.append(opt_rs_cur_col)
-
-        if iter_num >= lookback:
-            opt_rs_n_lookback_col_ago = opt_row_sums[iter_num - lookback]
-            _tol = tol_func(opt_rs_cur_col, opt_rs_n_lookback_col_ago)
-            if (iter_num == max_ra) or (_tol <= tol):
-                break
-        iter_num = iter_num + 1
-        print(y_lst)
-
-    return y_lst #TODO
+    for _col_idx in range(num_var):
+        if np.isinf(x_mat[0, _col_idx]):
+            x_mat[0, _col_idx] = quant[_col_idx](level/(2*num_samples))
+        if np.isinf(x_mat[-1, _col_idx]):
+            x_mat[-1, _col_idx] = quant[_col_idx](level+(1-level)*(1-1/(2*num_samples)))
+    return x_mat
 
 
-
-def rearrange_algorithm(level: float, quant, num_steps: int=10, abstol: float=0,
-                        lookback: int=0, max_ra: int=0, method: str="lower",
-                        sample: bool=True):
+def bounds_var(level: float, quant, num_steps: int=10, abstol: float=0,
+               lookback: int=0, max_ra: int=0, method: str="lower", sample:
+               bool=True, cost_func=np.sum):
     """Computing the lower/upper bounds for the best and worst VaR
 
     This function performs the RA and calculates the lower and upper bounds on
@@ -144,8 +107,8 @@ def rearrange_algorithm(level: float, quant, num_steps: int=10, abstol: float=0,
 
     method : str
         Risk measure that is approximated. Valid options are:
-        * `lower` or `best`: for best VaR
-        * `upper` or `worst`: for worst VaR
+        * `lower` or `best.VaR`: for best VaR
+        * `upper` or `worst.VaR`: for worst VaR
 
     sample : bool
         Indication whether each column of the two working matrices is randomly
@@ -160,29 +123,144 @@ def rearrange_algorithm(level: float, quant, num_steps: int=10, abstol: float=0,
         lookback = len(quant)
     method = method.lower()
 
-    if not 0 < level < 1:
-        raise ValueError("Level needs to be between zero and one!")
+    #if not 0 < level < 1:
+    #    raise ValueError("Level needs to be between zero and one!")
     if abstol < 0:
         raise ValueError("Absolute tolerance needs to be non-negative!")
     if num_steps < 2:
         raise ValueError("Number of discretization points needs to be at least 2")
 
-    # Determine underline{X}^*
-    if method in ['worst', 'upper']:
+    if method in ['worst.VaR', 'upper']:
         prob_under = level + (1-level)*np.arange(num_steps)/num_steps
         prob_over = level + (1-level)*np.arange(1, num_steps+1)/num_steps
-    elif method in ['best', 'lower']:
+        optim_func = min
+    elif method in ['best.VaR', 'lower']:
         prob_under = level*np.arange(num_steps)/num_steps
         prob_over = level*np.arange(1, num_steps+1)/num_steps
+        optim_func = max
     else:
         raise NotImplementedError("Only best and worst VaR are supported right now.")
 
+    # Determine underline{X}^*
+    x_mat_under = create_matrix_from_quantile(quant, prob_under, level)
+    x_ra_low = basic_rearrange(x_mat_under, tol=abstol, tol_type="absolute",
+            lookback=lookback, max_ra=max_ra, optim_func=optim_func,
+            cost_func=cost_func)
+    bound_low = optim_func(cost_func(x_ra_low, axis=1))
 
-    result_low = rearrange(quant, prob_under, tol=abstol, tol_type="absolute",
-                           lookback=lookback, max_ra=max_ra, method=method,
-                           sample=sample, is_sorted=True)
+    # Determine overline{X}^*
+    x_mat_over = create_matrix_from_quantile(quant, prob_over, level)
+    x_ra_up = basic_rearrange(x_mat_over, tol=abstol, tol_type="absolute",
+            lookback=lookback, max_ra=max_ra, optim_func=optim_func,
+            cost_func=cost_func)
+    bound_up = optim_func(cost_func(x_ra_up, axis=1))
+    return (bound_low, x_ra_low), (bound_up, x_ra_up)
 
-    result_up = rearrange(quant, prob_over, tol=abstol, tol_type="absolute",
-                          lookback=lookback, max_ra=max_ra, method=method,
-                          sample=sample, is_sorted=True)
-    print(result_low)
+
+def bounds_expectation_supermod(quant, num_steps: int=10, abstol: float=0,
+                                lookback: int=0, max_ra: int=0, supermod_func=np.sum,
+                                method: str="lower", sample: bool=True):
+    if lookback == 0:
+        lookback = len(quant)
+    method = method.lower()
+
+    if abstol < 0:
+        raise ValueError("Absolute tolerance needs to be non-negative!")
+    if num_steps < 2:
+        raise ValueError("Number of discretization points needs to be at least 2")
+
+    prob_under = np.arange(num_steps)/num_steps
+    prob_over = (np.arange(num_steps)+1)/num_steps
+
+    x_mat_under = create_matrix_from_quantile(quant, prob_under, level=0.)
+    x_mat_over = create_matrix_from_quantile(quant, prob_over, level=0.)
+    if method in ["lower"]:
+        optim_func = min
+        x_ra_low = basic_rearrange(x_mat_under, tol=abstol, tol_type="absolute",
+                                   lookback=lookback, max_ra=max_ra,
+                                   optim_func=optim_func, cost_func=supermod_func)
+        x_ra_up = basic_rearrange(x_mat_over, tol=abstol, tol_type="absolute",
+                                  lookback=lookback, max_ra=max_ra,
+                                  optim_func=optim_func, cost_func=supermod_func)
+    elif method in ["upper"]:
+        x_ra_low = np.sort(x_mat_under, axis=0)
+        x_ra_up = np.sort(x_mat_over, axis=0)
+    bound_low = np.mean(supermod_func(x_ra_low, axis=1))
+    bound_up = np.mean(supermod_func(x_ra_up, axis=1))
+    return (bound_low, x_ra_low), (bound_up, x_ra_up)
+
+
+
+
+def bounds_surv_probability(quant, s_level, num_steps: int=10, abstol: float=0,
+                            lookback: int=0, max_ra: int=0,
+                            cost_func=np.sum, method: str="lower",
+                            sample: bool=True):
+    if lookback == 0:
+        lookback = len(quant)
+    method = method.lower()
+
+    if abstol < 0:
+        raise ValueError("Absolute tolerance needs to be non-negative!")
+    if num_steps < 2:
+        raise ValueError("Number of discretization points needs to be at least 2")
+
+    if method in ['upper']:
+        prob_under = lambda alpha: alpha + (1-alpha)*np.arange(num_steps)/num_steps
+        prob_over = lambda alpha: alpha + (1-alpha)*np.arange(1, num_steps+1)/num_steps
+        optim_func = min
+    elif method in ['lower']:
+        prob_under = lambda alpha: alpha*np.arange(num_steps)/num_steps
+        prob_over = lambda alpha: alpha*np.arange(1, num_steps+1)/num_steps
+        optim_func = max
+    else:
+        raise NotImplementedError
+
+    def find_new_alpha(s, prob_alpha, alpha, alpha_low=0., alpha_high=1.):
+        x_mat_alpha = create_matrix_from_quantile(quant, prob_alpha, level=alpha)
+        x_ra = basic_rearrange(x_mat_alpha, tol=abstol, tol_type="absolute",
+                lookback=lookback, max_ra=max_ra, optim_func=optim_func,
+                cost_func=cost_func)
+        #x_ra = np.sort(x_mat_alpha, axis=0) # to test comonotonic
+        psi_x_ra = cost_func(x_ra, axis=1)
+        _g = optim_func(psi_x_ra)
+        if _g >= s:
+            alpha_high = alpha
+            alpha = (alpha + alpha_low)/2.
+        else:
+            alpha_low = alpha
+            alpha = (alpha + alpha_high)/2.
+        return alpha, alpha_low, alpha_high, x_ra
+
+    def alpha_loop(alpha, alpha_low, alpha_high, prob_func):
+        while np.abs(alpha_high - alpha_low) > 1e-4:
+            prob_alpha = prob_func(alpha)
+            alpha, alpha_low, alpha_high, x_ra = find_new_alpha(s_level,
+                    prob_alpha, alpha, alpha_low, alpha_high)
+            #print(alpha, alpha_low, alpha_high)
+        return alpha, x_ra
+
+    alpha = .5
+    alpha_low = 0.
+    alpha_high = 1.
+    alpha_under, x_ra_under = alpha_loop(alpha, alpha_low, alpha_high, prob_under)
+    alpha_over, x_ra_over = alpha_loop(alpha, alpha_low, alpha_high, prob_over)
+    #return (alpha_under, x_ra_under), (alpha_over, x_ra_over)
+    return (1.-alpha_under, x_ra_under), (1.-alpha_over, x_ra_over)
+
+
+
+def create_comonotonic_ra(level: float, quant, num_steps: int=10):
+    if num_steps < 2:
+        raise ValueError("Number of discretization points needs to be at least 2")
+
+    #prob_under = level*np.arange(num_steps)/num_steps
+    #prob_over = level*np.arange(1, num_steps+1)/num_steps
+    prob_under = level + (1-level)*np.arange(num_steps)/num_steps
+    prob_over = level + (1-level)*np.arange(1, num_steps+1)/num_steps
+
+    x_mat_under = create_matrix_from_quantile(quant, prob_under, level)
+    x_mat_over = create_matrix_from_quantile(quant, prob_over, level)
+    x_ra_low = np.sort(x_mat_under, axis=0)
+    x_ra_up = np.sort(x_mat_over, axis=0)
+    return x_ra_low, x_ra_up

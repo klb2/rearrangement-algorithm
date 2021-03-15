@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-from digcommpy import __version__, __author__, __email__
+from rearrange_algorithm import __version__, __author__, __email__
 
 with open("README.md") as rm:
     long_desc = rm.read()

@@ -5,13 +5,14 @@ import scratch
 
 
 N = int(1e5)
-qf = [stats.uniform.ppf]*5
+#qf = [stats.uniform.ppf]*5
 #qf = [stats.uniform(-1, 1).ppf]*5
 #qf = [stats.uniform.ppf, stats.uniform.ppf, stats.uniform.ppf]
-#qf = [stats.expon.ppf, stats.expon.ppf, stats.expon.ppf, stats.expon.ppf, stats.expon.ppf]
+qf = [stats.expon.ppf, stats.expon.ppf, stats.expon.ppf, stats.expon.ppf, stats.expon.ppf]
 #supermod_func = np.prod
 #supermod_func = np.sum
 supermod_func = np.min
+#supermod_func = np.max
 
 results_low_low, results_low_up = scratch.bounds_expectation_supermod(
         qf, num_steps=N, supermod_func=supermod_func,
