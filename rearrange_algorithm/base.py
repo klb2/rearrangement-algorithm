@@ -2,8 +2,8 @@ import numpy as np
 from scipy import stats
 
 
-def basic_rearrange(x_mat, tol, tol_type, lookback, max_ra, optim_func,
-                    cost_func=np.sum, is_sorted=False, verbose=False,
+def basic_rearrange(x_mat, optim_func, lookback, tol=0., tol_type='absolute',
+                    max_ra=0, cost_func=np.sum, is_sorted=False, verbose=False,
                     *args, **kwargs):
     num_samples, num_var = np.shape(x_mat)
     if is_sorted:
@@ -29,15 +29,15 @@ def basic_rearrange(x_mat, tol, tol_type, lookback, max_ra, optim_func,
         #row_sums = rs_mj + rearrange_col
         #####
         
-        _column = x_mat[:, col_idx]
-        _x_wo_column = np.delete(x_mat, col_idx, axis=1) # https://stackoverflow.com/q/21022542
+        _column = x_mat_sorted[:, col_idx]
+        _x_wo_column = np.delete(x_mat_sorted, col_idx, axis=1) # https://stackoverflow.com/q/21022542
         rs_mj = cost_func(_x_wo_column, axis=1)
         #_rank_idx = stats.rankdata(rs_mj, method='ordinal')-1
         #rearrange_col = np.sort(_column)[::-1][_rank_idx]
         _rank_idx = np.argsort(np.argsort(rs_mj)[::-1])
         rearrange_col = x_mat_sorted[:, col_idx][_rank_idx]
-        x_mat[:, col_idx] = rearrange_col
-        row_sums = cost_func(x_mat, axis=1)
+        x_mat_sorted[:, col_idx] = rearrange_col
+        row_sums = cost_func(x_mat_sorted, axis=1)
 
         opt_rs_new = optim_func(row_sums)
         opt_rs_history.append(opt_rs_new)
@@ -60,7 +60,7 @@ def basic_rearrange(x_mat, tol, tol_type, lookback, max_ra, optim_func,
         #x_old = np.copy(x_mat)
 
         col_idx = np.mod(col_idx + 1, num_var)
-    return x_mat
+    return x_mat_sorted
 
 
 def create_matrix_from_quantile(quant, prob, level=1.):
