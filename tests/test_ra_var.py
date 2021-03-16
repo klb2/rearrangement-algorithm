@@ -82,3 +82,18 @@ def test_var_pareto_lower_max(alpha, expected):
     #print(var_under, var_over)
     assert ((var_under <= var_over) and (expected*.985 < var_under <= expected)
             and (expected <= var_over < expected*1.01))
+
+@pytest.mark.parametrize("alpha,expected", [(.75, 1.), (.1875, 3.), (.12, 4.)])
+def test_var_pareto_upper_max(alpha, expected):
+    """
+    From the paper "Computation of sharp bounds on the distribution of a
+    function of dependent risks" (Puccetti et al., 2012). (Table 3)
+    """
+    qf = [stats.pareto(2, loc=-1).ppf]*3
+    results_under, results_over = bounds_var(1.-alpha, qf, method="upper",
+                                             num_steps=1000, cost_func=np.max)
+    var_under = round(results_under[0], 8)
+    var_over = round(results_over[0], 8)
+    #print(var_under, var_over)
+    assert ((var_under <= var_over) and (expected*.99 < var_under <= expected)
+            and (expected <= var_over < expected*1.01))

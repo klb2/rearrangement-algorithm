@@ -176,7 +176,7 @@ def bounds_expectation_supermod(quant, num_steps: int=10, abstol: float=0,
     x_mat_under = create_matrix_from_quantile(quant, prob_under, level=0.)
     x_mat_over = create_matrix_from_quantile(quant, prob_over, level=0.)
     if method in ["lower"]:
-        optim_func = min
+        optim_func = max#min
         x_ra_low = basic_rearrange(x_mat_under, tol=abstol, tol_type="absolute",
                                    lookback=lookback, max_ra=max_ra,
                                    optim_func=optim_func, cost_func=supermod_func)
