@@ -5,8 +5,8 @@ from rearrange_algorithm import __version__, __author__, __email__
 with open("README.md") as rm:
     long_desc = rm.read()
 
-with open("requirements.txt") as req:
-    requirements = req.read().splitlines()
+#with open("requirements.txt") as req:
+#    requirements = req.read().splitlines()
 
 setup(
     name = "rearrangement_algorithm",
@@ -22,6 +22,6 @@ setup(
         'Source Code': 'https://gitlab.com/klb2/rearrangement-algorithm'
         },
     packages=find_packages(),
-    tests_require=['pytest', 'tox', 'rpy2'],
-    install_requires=requirements,
+    tests_require=['pytest', 'tox'],
+    install_requires=['numpy', 'scipy'],
 )
