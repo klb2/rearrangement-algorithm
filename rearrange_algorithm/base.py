@@ -160,7 +160,7 @@ def bounds_var(level: float, quant, num_steps: int=10, abstol: float=0,
 
 def bounds_expectation_supermod(quant, num_steps: int=10, abstol: float=0,
                                 lookback: int=0, max_ra: int=0, supermod_func=np.sum,
-                                method: str="lower", sample: bool=True):
+                                method: str="lower"):
     if lookback == 0:
         lookback = len(quant)
     method = method.lower()
