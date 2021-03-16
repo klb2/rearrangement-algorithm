@@ -2,7 +2,7 @@ import numpy as np
 from scipy import stats
 import pytest
 
-from rearrange_algorithm import bounds_var
+from rearrangement_algorithm import bounds_var
 
 
 @pytest.mark.parametrize("alpha,expected", [(.5102, .5), (.1111, 2.0), (.16, 1.5)])

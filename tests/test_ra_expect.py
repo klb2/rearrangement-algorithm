@@ -2,7 +2,7 @@ import numpy as np
 from scipy import stats
 import pytest
 
-from rearrange_algorithm import bounds_expectation_supermod
+from rearrangement_algorithm import bounds_expectation_supermod
 
 def stop_loss_function(x, k=0, *args, **kwargs):
     _sum = np.sum(x, *args, **kwargs) - k
