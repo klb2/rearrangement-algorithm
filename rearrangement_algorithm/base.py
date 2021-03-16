@@ -2,10 +2,12 @@ import numpy as np
 from scipy import stats
 
 
-def basic_rearrange(x_mat, optim_func, lookback, tol=0., tol_type='absolute',
+def basic_rearrange(x_mat, optim_func, lookback=0, tol=0., tol_type='absolute',
                     max_ra=0, cost_func=np.sum, is_sorted=False, verbose=False,
                     *args, **kwargs):
     num_samples, num_var = np.shape(x_mat)
+    if lookback == 0:
+        lookback = num_var
     if is_sorted:
         x_mat_sorted = np.copy(x_mat)
     else:
