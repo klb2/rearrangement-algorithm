@@ -3,8 +3,54 @@ from scipy import stats
 
 
 def basic_rearrange(x_mat, optim_func, lookback=0, tol=0., tol_type='absolute',
-                    max_ra=0, cost_func=np.sum, is_sorted=False, verbose=False,
-                    *args, **kwargs):
+                    max_ra=0, cost_func=np.sum, is_sorted=False, *args,
+                    **kwargs):
+    """Implementation of the matrix rearrangement algorithm.
+
+    Basic implementation of the rearrangement algorithm to get a permutation of
+    a matrix :math:`X` such that each column :math:`j` is oppositely ordered to
+    the vector derived by applying a function :math:`\\psi` to the (sub-)matrix
+    without column :math:`j`. The implementation is based on the R library
+    `qrmtools` (https://cran.r-project.org/package=qrmtools) (version 0.0-13).
+    A detailed description can be found in the paper "Implementing the
+    Rearrangement Algorithm: An Example from Computational Risk Management", M.
+    Hofert, In: Risks, vol. 8, no. 2, 2020
+    (https://doi.org/10.3390/risks8020047).
+
+    
+    Parameters
+    ----------
+    x_mat : 2D-array or matrix
+        Matrix of shape `(num_samples, num_var)` that will get rearranged.
+
+    optim_func : func
+        Internal optimization function. It needs to take a vector-argument and
+        return a scalar. This usually is either :func:`min` or :func:`max`.
+
+    lookback: int, optional
+        Number of rearrangement steps to look back to determine convergence.
+
+    tol: float, optional
+        Tolerance to determine convergence.
+
+    tol_type: str, optional
+        Tolerance function used. Possible options are `"absolute"` and
+        `"relative"`.
+
+    max_ra: int, optional
+        Number of maximum column rearrangements. If ``0``, there will be no
+        limit.
+
+    cost_func: func, optional
+        Cost function :math:`\\psi` that is applied to each row. It takes a 2D
+        numpy.array as input and outputs a vector that results by applying the
+        function to each row. It needs to take the keyword argument ``axis`` in
+        the numpy style. An example for the sum is :func:`numpy.sum`.
+
+    is_sorted: bool, optional
+        Indicates wheter the columns of the matrix ``x_mat`` are sorted in
+        increasing order.
+    """
     num_samples, num_var = np.shape(x_mat)
     if lookback == 0:
         lookback = num_var
