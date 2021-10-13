@@ -152,17 +152,19 @@ def bounds_VaR(level: float, quant, num_steps: int=10, abstol: float=0,
 
     lookback : int
         Number of column rearrangements to look back for deciding about
-        convergence. Must be a number in {1, ..., max_ra-1}.
-        If set to zero, it defaults to len(quant).
+        convergence. Must be a number in :math:`\\{1, ..., \\text{max_ra}-1\\}`.
+        If set to zero, it defaults to ``len(quant)``.
 
     max_ra : int
         Number of column rearrangements. If zero, it defaults to infinitely
         many.
 
     method : str
-        Risk measure that is approximated. Valid options are:
-        * `lower` or `best.VaR`: for best VaR
-        * `upper` or `worst.VaR`: for worst VaR
+        Risk measure that is approximated.
+        Valid options are:
+
+        - `lower` or `best.VaR`: for best VaR
+        - `upper` or `worst.VaR`: for worst VaR
 
     sample : bool
         Indication whether each column of the two working matrices is randomly
@@ -171,7 +173,17 @@ def bounds_VaR(level: float, quant, num_steps: int=10, abstol: float=0,
 
     Returns
     -------
-    TODO
+    bound_low : float
+        Lower bound on the VaR
+
+    x_ra_low : numpy.array
+        Rearranged matrix for the lower bound on the VaR
+
+    bound_up : float
+        Upper bound on the VaR
+
+    x_ra_up : numpy.array
+        Rearranged matrix for the upper bound on the VaR
     """
     if lookback == 0:
         lookback = len(quant)
