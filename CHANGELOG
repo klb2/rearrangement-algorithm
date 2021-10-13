@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [0.1.0] - 202X-XX-XX
+## [0.1.0] - 2021-XX-XX
 ### Added
-- 
+- Basic functionality of the rearrangement algorithm based on the paper
+["Implementing the Rearrangement Algorithm: An Example from Computational Risk
+Management" (Marius Hofert, Risks 2020 8(2),
+47)](https://doi.org/10.3390/risks8020047)
+- In particular, this includes:
+  - Bounds on the value-at-risk (VaR)
+  - Bounds on the expected value of supermodular functions
+  - Bounds on the probability of functions of random variables

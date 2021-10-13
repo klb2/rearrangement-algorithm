@@ -4,14 +4,14 @@ __version__ = "0.1.0"
 
 
 from .base import (basic_rearrange, bounds_expectation_supermod,
-                   bounds_surv_probability, bounds_var, create_comonotonic_ra,
+                   bounds_surv_probability, bounds_VaR, create_comonotonic_ra,
                    create_matrix_from_quantile)
 
 __all__ = ["__version__",
            "basic_rearrange",
            "bounds_expectation_supermod",
            "bounds_surv_probability",
-           "bounds_var",
+           "bounds_VaR",
            "create_comonotonic_ra",
            "create_matrix_from_quantile",
           ]

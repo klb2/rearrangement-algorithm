@@ -2,7 +2,7 @@ import numpy as np
 from scipy import stats
 import pytest
 
-from rearrangement_algorithm import bounds_var
+from rearrangement_algorithm import bounds_VaR
 
 
 @pytest.mark.parametrize("alpha,expected", [(.5102, .5), (.1111, 2.0), (.16, 1.5)])
@@ -12,7 +12,7 @@ def test_var_pareto_lower(alpha, expected):
     function of dependent risks" (Puccetti et al., 2012). (Table 1)
     """
     qf = [stats.pareto(2, loc=-1).ppf]*3
-    results_under, results_over = bounds_var(1.-alpha, qf, method="lower",
+    results_under, results_over = bounds_VaR(1.-alpha, qf, method="lower",
                                              num_steps=500)
     var_under = results_under[0]
     var_over = results_over[0]
@@ -26,7 +26,7 @@ def test_var_pareto_upper(alpha, expected):
     function of dependent risks" (Puccetti et al., 2012). (Table 1)
     """
     qf = [stats.pareto(2, loc=-1).ppf]*3
-    results_under, results_over = bounds_var(1.-alpha, qf, method="upper",
+    results_under, results_over = bounds_VaR(1.-alpha, qf, method="upper",
                                              num_steps=500)
     var_under = results_under[0]
     var_over = results_over[0]
@@ -43,7 +43,7 @@ def test_var_pareto_lower_product(alpha, expected):
     """
     theta = [1.5, 1.8, 2.0, 2.2, 2.5]
     qf = [stats.pareto(t, loc=-1).ppf for t in theta]
-    results_under, results_over = bounds_var(1.-alpha, qf, method="lower",
+    results_under, results_over = bounds_VaR(1.-alpha, qf, method="lower",
                                              num_steps=500, cost_func=np.prod)
     var_under = results_under[0]
     var_over = results_over[0]
@@ -59,7 +59,7 @@ def test_var_pareto_upper_product(alpha, expected):
     """
     theta = [1.5, 1.8, 2.0, 2.2, 2.5]
     qf = [stats.pareto(t, loc=-1).ppf for t in theta]
-    results_under, results_over = bounds_var(1.-alpha, qf, method="upper",
+    results_under, results_over = bounds_VaR(1.-alpha, qf, method="upper",
                                              num_steps=1000, cost_func=np.prod)
     var_under = results_under[0]
     var_over = results_over[0]
@@ -75,7 +75,7 @@ def test_var_pareto_lower_max(alpha, expected):
     function of dependent risks" (Puccetti et al., 2012). (Table 3)
     """
     qf = [stats.pareto(2, loc=-1).ppf]*3
-    results_under, results_over = bounds_var(1.-alpha, qf, method="lower",
+    results_under, results_over = bounds_VaR(1.-alpha, qf, method="lower",
                                              num_steps=1000, cost_func=np.max)
     var_under = round(results_under[0], 8)
     var_over = round(results_over[0], 8)
@@ -90,7 +90,7 @@ def test_var_pareto_upper_max(alpha, expected):
     function of dependent risks" (Puccetti et al., 2012). (Table 3)
     """
     qf = [stats.pareto(2, loc=-1).ppf]*3
-    results_under, results_over = bounds_var(1.-alpha, qf, method="upper",
+    results_under, results_over = bounds_VaR(1.-alpha, qf, method="upper",
                                              num_steps=1000, cost_func=np.max)
     var_under = round(results_under[0], 8)
     var_over = round(results_over[0], 8)

@@ -50,6 +50,11 @@ def basic_rearrange(x_mat, optim_func, lookback=0, tol=0., tol_type='absolute',
     is_sorted: bool, optional
         Indicates wheter the columns of the matrix ``x_mat`` are sorted in
         increasing order.
+
+    Returns
+    -------
+    x_rearranged: numpy.array
+        Rearranged matrix of shape `(num_samples, num_var)`.
     """
     num_samples, num_var = np.shape(x_mat)
     if lookback == 0:
@@ -123,7 +128,7 @@ def create_matrix_from_quantile(quant, prob, level=1.):
     return x_mat
 
 
-def bounds_var(level: float, quant, num_steps: int=10, abstol: float=0,
+def bounds_VaR(level: float, quant, num_steps: int=10, abstol: float=0,
                lookback: int=0, max_ra: int=0, method: str="lower", sample:
                bool=True, cost_func=np.sum):
     """Computing the lower/upper bounds for the best and worst VaR
