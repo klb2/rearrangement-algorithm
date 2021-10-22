@@ -10,8 +10,8 @@ Welcome to Rearrangement Algorithm's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   modules
-
+   installation
+   rearrangement_algorithm
 
 
 Indices and tables

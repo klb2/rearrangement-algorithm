@@ -1,10 +1,14 @@
-rearrangement\_algorithm package
-================================
+.. automodapi:: rearrangement_algorithm
 
-Module contents
----------------
 
-.. automodule:: rearrangement_algorithm
-   :members:
-   :undoc-members:
-   :show-inheritance:
+..
+    rearrangement\_algorithm package
+    ================================
+    
+    Module contents
+    ---------------
+
+    .. automodule:: rearrangement_algorithm
+       :members:
+       :undoc-members:
+       :show-inheritance:
