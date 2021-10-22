@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 from rearrangement_algorithm import __version__, __author__, __email__
 
-with open("README.md") as rm:
+with open("README.md", encoding="utf8") as rm:
     long_desc = rm.read()
 
 setup(
