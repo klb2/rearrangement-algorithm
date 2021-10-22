@@ -35,6 +35,26 @@ Management", M. Hofert, In: Risks, vol. 8, no. 2,
 2020](https://doi.org/10.3390/risks8020047)[^hofert2020].
 
 
+## Installation
+You can install the package via pip
+```bash
+pip install rearrangement-algorithm
+```
+
+If you want to install the latest (unstable) version, you can install the
+package from source
+```bash
+git clone https://gitlab.com/klb2/rearrangement-algorithm.git
+cd rearrangement-algorithm
+git checkout dev
+pip install .
+```
+
+## Documentation
+You can find the documentation for this package on [Read the
+Docs](https://rearrangement-algorithm.readthedocs.io/).  
+This also includes some usage examples.
+
 
 ## License and Referencing
 This program is licensed under the GPLv3 license. If you in any way use this
