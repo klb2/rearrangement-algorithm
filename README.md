@@ -1,5 +1,9 @@
 # Rearrangement Algorithm
 
+[![PyPI version](https://badge.fury.io/py/rearrangement-algorithm.svg)](https://badge.fury.io/py/rearrangement-algorithm)
+[![Read the docs status](https://readthedocs.org/projects/rearrangement-algorithm/badge/?version=latest&style=flat)](https://rearrangement-algorithm.readthedocs.io/en/dev/)
+
+
 Python implementation of a rearrangement algorithm that can be used to
 calculate bounds on the value-at-risk (VaR) of dependent risks.
 
