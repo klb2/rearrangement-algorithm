@@ -10,12 +10,10 @@ def basic_rearrange(x_mat, optim_func, lookback=0, tol=0., tol_type='absolute',
     Basic implementation of the rearrangement algorithm to get a permutation of
     a matrix :math:`X` such that each column :math:`j` is oppositely ordered to
     the vector derived by applying a function :math:`\\psi` to the (sub-)matrix
-    without column :math:`j`. The implementation is based on the R library
-    `qrmtools` (https://cran.r-project.org/package=qrmtools) (version 0.0-13).
-    A detailed description can be found in the paper "Implementing the
-    Rearrangement Algorithm: An Example from Computational Risk Management", M.
-    Hofert, In: Risks, vol. 8, no. 2, 2020
-    (https://doi.org/10.3390/risks8020047).
+    without column :math:`j`.
+
+    The implementation is based on the R library ``qrmtools`` [1]_.
+    A detailed description can be found in [2]_.
 
     
     Parameters
@@ -51,10 +49,21 @@ def basic_rearrange(x_mat, optim_func, lookback=0, tol=0., tol_type='absolute',
         Indicates wheter the columns of the matrix ``x_mat`` are sorted in
         increasing order.
 
+
     Returns
     -------
     x_rearranged: numpy.array
         Rearranged matrix of shape `(num_samples, num_var)`.
+
+
+    References
+    ----------
+    .. [1] M. Hofert, K. Hornik, and A. J. McNeil, "qrmtools: Tools for
+           Quantitative Risk Management." Version 0.0-13
+           (https://cran.r-project.org/web/packages/qrmtools/index.html)
+
+    .. [2] M. Hofert, "Implementing the Rearrangement Algorithm: An Example
+           from Computational Risk Management," Risks, vol. 8, no. 2, May 2020.
     """
     num_samples, num_var = np.shape(x_mat)
     if lookback == 0:
@@ -118,6 +127,40 @@ def basic_rearrange(x_mat, optim_func, lookback=0, tol=0., tol_type='absolute',
 
 
 def create_matrix_from_quantile(quant, prob, level=1.):
+    """Create a matrix approximation from marginal quantile functions
+
+    Given a set of :math:`n` quantile functions, this function returns a matrix
+    where each column represents a random variable with the specified marginal
+    distribution.
+    Each row represents the value of the random variable at a given
+    probability.  
+    For details, see [1]_.
+
+
+    Parameters
+    ----------
+    quant : list
+        List of marginal quantile functions
+
+    prob : list of float
+        Probability values at which the quantile functions are evaluated.
+
+    level : float
+        Confidence level between 0 and 1.
+
+
+    Returns
+    -------
+    x_mat : numpy.array
+        Matrix with the values of the random variables at the specified
+        probabilites.
+
+
+    References
+    ----------
+    .. [1] M. Hofert, "Implementing the Rearrangement Algorithm: An Example
+           from Computational Risk Management," Risks, vol. 8, no. 2, May 2020.
+    """
     x_mat = np.array([qf(prob) for qf in quant]).T
     num_samples, num_var = np.shape(x_mat)
     for _col_idx in range(num_var):
@@ -134,7 +177,9 @@ def bounds_VaR(level: float, quant, num_steps: int=10, abstol: float=0,
     """Computing the lower/upper bounds for the best and worst VaR
 
     This function performs the RA and calculates the lower and upper bounds on
-    the worst or best case VaR for a given confidence level.
+    the worst or best case VaR for a given confidence level.  
+    For mathematical details, see [1]_.
+
 
     Parameters
     ----------
@@ -184,6 +229,13 @@ def bounds_VaR(level: float, quant, num_steps: int=10, abstol: float=0,
 
     x_ra_up : numpy.array
         Rearranged matrix for the upper bound on the VaR
+
+
+    References
+    ----------
+    .. [1] P. Embrechts, G. Puccetti, and L. Rüschendorf, "Model uncertainty
+           and VaR aggregation," Journal of Banking & Finance, vol. 37, no. 8,
+           pp.  2750-2764, Aug. 2013.
     """
     if lookback == 0:
         lookback = len(quant)
@@ -226,6 +278,71 @@ def bounds_VaR(level: float, quant, num_steps: int=10, abstol: float=0,
 def bounds_expectation_supermod(quant, num_steps: int=10, abstol: float=0,
                                 lookback: int=0, max_ra: int=0, supermod_func=np.sum,
                                 method: str="lower"):
+    """Computing the lower/upper bounds on the expectation of supermodular functions.
+
+    This function performs the RA and calculates the lower and upper bounds on
+    the expected value of a supermodular function of dependent random
+    variables.  
+    For mathematical details, see [1]_.
+
+
+    Parameters
+    ----------
+    quant : list
+        List of marginal quantile functions
+
+    num_steps : int
+        Number of discretization points
+
+    abstol : float
+        Absolute convergence tolerance
+
+    lookback : int
+        Number of column rearrangements to look back for deciding about
+        convergence. Must be a number in :math:`\\{1, ..., \\text{max_ra}-1\\}`.
+        If set to zero, it defaults to ``len(quant)``.
+
+    max_ra : int
+        Number of column rearrangements. If zero, it defaults to infinitely
+        many.
+
+    supermod_func : callable
+        Callable function that represent the supermodular function which is
+        applied to the dependent random variables.
+        It needs to accept the ``axis=1`` keyword argument and handle it in the
+        numpy style, i.e., taking a 2D-array as input and returning a
+        column-vector.
+
+    method : str
+        Determine if the lower or upper bound on the expected value is computed.
+        Valid options are:
+
+        - `lower`: for the lower bound
+        - `upper`: for the upper bound
+
+
+    Returns
+    -------
+    bound_low : float
+        Lower bound on the approximated bound of the expected value
+
+    x_ra_low : numpy.array
+        Rearranged matrix for the lower bound
+
+    bound_up : float
+        Upper bound on the approximated bound of the expected value
+
+    x_ra_up : numpy.array
+        Rearranged matrix for the upper bound
+
+
+    References
+    ----------
+    .. [1] G. Puccetti and L. Rüschendorf, "Computation of Sharp Bounds on the
+           Expected Value of a Supermodular Function of Risks with Given
+           Marginals," Communications in Statistics - Simulation and
+           Computation, vol. 44, no. 3, pp. 705-718, Mar. 2015.
+    """
     if lookback == 0:
         lookback = len(quant)
     method = method.lower()
@@ -258,10 +375,81 @@ def bounds_expectation_supermod(quant, num_steps: int=10, abstol: float=0,
 
 
 
-def bounds_surv_probability(quant, s_level, num_steps: int=10, abstol: float=0,
-                            lookback: int=0, max_ra: int=0,
-                            cost_func=np.sum, method: str="lower",
-                            sample: bool=True):
+def bounds_surv_probability(quant, s_level: float, num_steps: int=10, abstol:
+                            float=0, lookback: int=0, max_ra: int=0,
+                            cost_func=np.sum, method: str="lower", sample:
+                            bool=True):
+    """Computing the lower/upper bounds on the survival probability of a function of dependent risks
+    
+    This function performs the RA and calculates the lower and upper bounds on
+    the survival probability of function of dependent random variables.  
+    For mathematical details, see [1]_.
+
+
+    Parameters
+    ----------
+    quant : list
+        List of marginal quantile functions
+
+    s_level : float
+        Value of the function of the random variables at which the survival
+        probability bounds are calculated.
+
+    num_steps : int
+        Number of discretization points
+
+    abstol : float
+        Absolute convergence tolerance
+
+    lookback : int
+        Number of column rearrangements to look back for deciding about
+        convergence. Must be a number in :math:`\\{1, ..., \\text{max_ra}-1\\}`.
+        If set to zero, it defaults to ``len(quant)``.
+
+    max_ra : int
+        Number of column rearrangements. If zero, it defaults to infinitely
+        many.
+
+    cost_func : callable
+        Callable function that represent the function which is applied to the
+        dependent random variables. It needs to accept the ``axis=1`` keyword
+        argument and handle it in the numpy style, i.e., taking a 2D-array as
+        input and returning a column-vector.
+
+    method : str
+        Determine if the lower or upper bound on the expected value is computed.
+        Valid options are:
+
+        - `lower`: for the lower bound
+        - `upper`: for the upper bound
+
+    sample : bool
+        Indication whether each column of the two working matrices is randomly
+        permuted before the rearrangements begin
+
+
+    Returns
+    -------
+    bound_low : float
+        Lower bound on the survival probability
+
+    x_ra_low : numpy.array
+        Rearranged matrix for the lower bound
+
+    bound_up : float
+        Upper bound on the survival probability
+
+    x_ra_up : numpy.array
+        Rearranged matrix for the upper bound
+
+
+    References
+    ----------
+    .. [1] G. Puccetti and L. Rüschendorf, "Computation of sharp bounds on the
+           distribution of a function of dependent risks," Journal of
+           Computational and Applied Mathematics, vol. 236, no. 7, pp.
+           1833-1840, Jan. 2012.
+    """
     if lookback == 0:
         lookback = len(quant)
     method = method.lower()
@@ -317,6 +505,40 @@ def bounds_surv_probability(quant, s_level, num_steps: int=10, abstol: float=0,
 
 
 def create_comonotonic_ra(level: float, quant, num_steps: int=10):
+    """Creating a matrix with comonotonic random variables
+
+    This function creates a rearrangement matrix that represents a joint
+    distribution of comonotonic random variables for a given confidence level.
+    Both upper and lower bound approximations are returned.  
+    For mathematical details, see [1]_
+
+
+    Parameters
+    ----------
+    level : float
+        Confidence level between 0 and 1.
+
+    quant : list
+        List of marginal quantile functions
+
+    num_steps : int
+        Number of discretization points
+
+
+    Returns
+    -------
+    x_ra_low : numpy.array
+        Lower bound approximation of the rearrangement matrix.
+
+    x_ra_up : numpy.array
+        Upper bound approximation of the rearrangement matrix.
+
+    References
+    ----------
+    .. [1] P. Embrechts, G. Puccetti, and L. Rüschendorf, "Model uncertainty
+           and VaR aggregation," Journal of Banking & Finance, vol. 37, no. 8,
+           pp.  2750-2764, Aug. 2013.
+    """
     if num_steps < 2:
         raise ValueError("Number of discretization points needs to be at least 2")
 

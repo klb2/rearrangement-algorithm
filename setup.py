@@ -5,16 +5,15 @@ from rearrangement_algorithm import __version__, __author__, __email__
 with open("README.md") as rm:
     long_desc = rm.read()
 
-#with open("requirements.txt") as req:
-#    requirements = req.read().splitlines()
-
 setup(
     name = "rearrangement_algorithm",
     version = __version__,
     author = __author__,
     author_email = __email__,
     description = "Implementation of the rearrangement algorithm",
+    keywords = ["rearrangement algorith", "quantitative risk management"],
     long_description=long_desc,
+    long_description_content_type="text/markdown",
     license='GPLv3',
     url='https://gitlab.com/klb2/rearrangement-algorithm',
     project_urls={
