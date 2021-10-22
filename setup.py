@@ -17,7 +17,7 @@ setup(
     license='GPLv3',
     url='https://gitlab.com/klb2/rearrangement-algorithm',
     project_urls={
-        #'Documentation': "https://rearrangement.readthedocs.io/",
+        'Documentation': "https://rearrangement-algorithm.readthedocs.io",
         'Source Code': 'https://gitlab.com/klb2/rearrangement-algorithm'
         },
     packages=find_packages(),
