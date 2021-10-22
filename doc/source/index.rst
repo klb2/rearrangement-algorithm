@@ -11,6 +11,7 @@ Welcome to Rearrangement Algorithm's documentation!
    :caption: Contents:
 
    installation
+   examples
    rearrangement_algorithm
 
 
