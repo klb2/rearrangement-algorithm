@@ -19,7 +19,7 @@ The current version includes the following calculations:
 Mathematical details and derivations can be found in the
 publications[^embrechts2013][^puccetti2012][^puccetti2015].
 
-More information and an overview of extension can be found on the website of
+More information and an overview of extensions can be found on the website of
 the [Rearrangement Algorithm
 project](https://sites.google.com/site/rearrangementalgorithm/).
 
