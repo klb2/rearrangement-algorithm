@@ -1,7 +1,7 @@
 # Rearrangement Algorithm
 
 [![PyPI version](https://badge.fury.io/py/rearrangement-algorithm.svg)](https://badge.fury.io/py/rearrangement-algorithm)
-[![Read the docs status](https://readthedocs.org/projects/rearrangement-algorithm/badge/?version=latest&style=flat)](https://rearrangement-algorithm.readthedocs.io/en/dev/)
+[![Read the docs status](https://readthedocs.org/projects/rearrangement-algorithm/badge/?version=latest&style=flat)](https://rearrangement-algorithm.readthedocs.io/)
 
 
 Python implementation of a rearrangement algorithm that can be used to
