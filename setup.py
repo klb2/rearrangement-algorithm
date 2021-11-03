@@ -11,7 +11,7 @@ setup(
     author = __author__,
     author_email = __email__,
     description = "Implementation of the rearrangement algorithm",
-    keywords = ["rearrangement algorith", "quantitative risk management"],
+    keywords = ["rearrangement algorithm", "quantitative risk management"],
     long_description=long_desc,
     long_description_content_type="text/markdown",
     license='GPLv3',
@@ -20,6 +20,14 @@ setup(
         'Documentation': "https://rearrangement-algorithm.readthedocs.io",
         'Source Code': 'https://gitlab.com/klb2/rearrangement-algorithm'
         },
+    classifiers = [
+        "Programming Language :: Python :: 3",
+        "Intended Audience :: Financial and Insurance Industry",
+        "Intended Audience :: Science/Research",
+        "Intended Audience :: Telecommunications Industry",
+        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+        "Topic :: Scientific/Engineering",
+        ],
     packages=find_packages(),
     tests_require=['pytest', 'tox'],
     install_requires=['numpy', 'scipy'],
